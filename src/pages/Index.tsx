@@ -28,6 +28,7 @@ const Index = () => {
   const [isExiting, setIsExiting] = useState(false);
   const [cardKey, setCardKey] = useState(0);
   const [swipeAnimation, setSwipeAnimation] = useState<any>(null);
+  const [animationLoopCount, setAnimationLoopCount] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : false;
@@ -228,16 +229,6 @@ const Index = () => {
         </button>
       </div>
 
-      {currentIndex === 0 && swipeAnimation && !isLoading && hasMoreCards && (
-        <div className="relative z-10 w-32 mb-4 opacity-70">
-          <Lottie
-            animationData={swipeAnimation}
-            loop={true}
-            autoplay={true}
-          />
-        </div>
-      )}
-
       <div className="relative w-full max-w-md h-[500px] flex items-center justify-center mb-6">
         {isLoading ? (
           <div className="text-center animate-pulse">
@@ -292,6 +283,20 @@ const Index = () => {
                 Вопрос {currentIndex + 1}
               </div>
             </div>
+
+            {currentIndex === 0 && swipeAnimation && animationLoopCount < 3 && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                <div className="bg-white rounded-2xl shadow-lg p-4">
+                  <Lottie
+                    animationData={swipeAnimation}
+                    loop={true}
+                    autoplay={true}
+                    style={{ width: 120, height: 120 }}
+                    onLoopComplete={() => setAnimationLoopCount(prev => prev + 1)}
+                  />
+                </div>
+              </div>
+            )}
 
             {isDragging && Math.abs(dragOffset.x) > 50 && (
               <div
