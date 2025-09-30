@@ -18,6 +18,43 @@ interface Answer {
 const THERAPY_URL = 'https://functions.poehali.dev/aa8579aa-b123-4fcd-aa83-0c89accb40dc';
 const SESSION_URL = 'https://functions.poehali.dev/da0083c2-29d8-4bba-9002-7a5225186e44';
 
+const getIconForQuestion = (question: string, category: string): string => {
+  const lowerQ = question.toLowerCase();
+  
+  if (lowerQ.includes('тревог') || lowerQ.includes('беспоко')) return 'AlertCircle';
+  if (lowerQ.includes('груст') || lowerQ.includes('печал')) return 'CloudRain';
+  if (lowerQ.includes('злос') || lowerQ.includes('раздра')) return 'Flame';
+  if (lowerQ.includes('стыд') || lowerQ.includes('вин')) return 'EyeOff';
+  if (lowerQ.includes('страх') || lowerQ.includes('боишь')) return 'Ghost';
+  if (lowerQ.includes('люд') || lowerQ.includes('друз')) return 'Users';
+  if (lowerQ.includes('партнёр') || lowerQ.includes('отношен')) return 'Heart';
+  if (lowerQ.includes('родител') || lowerQ.includes('семь')) return 'Home';
+  if (lowerQ.includes('коллег') || lowerQ.includes('работ')) return 'Briefcase';
+  if (lowerQ.includes('утр')) return 'Sunrise';
+  if (lowerQ.includes('вечер') || lowerQ.includes('ноч')) return 'Moon';
+  if (lowerQ.includes('сон') || lowerQ.includes('уста')) return 'BedDouble';
+  if (lowerQ.includes('голод') || lowerQ.includes('ед')) return 'UtensilsCrossed';
+  if (lowerQ.includes('мысл') || lowerQ.includes('дума')) return 'Brain';
+  if (lowerQ.includes('избега')) return 'ArrowBigLeft';
+  if (lowerQ.includes('помога')) return 'HandHeart';
+  if (lowerQ.includes('поддержк')) return 'Users';
+  if (lowerQ.includes('хобби')) return 'Palette';
+  if (lowerQ.includes('спорт')) return 'Dumbbell';
+  if (lowerQ.includes('медитац') || lowerQ.includes('дыхан')) return 'Wind';
+  if (lowerQ.includes('готов') || lowerQ.includes('попроб')) return 'Rocket';
+  if (lowerQ.includes('план')) return 'ListChecks';
+  if (lowerQ.includes('изменен')) return 'RefreshCw';
+  
+  if (category.includes('screening')) return 'Search';
+  if (category.includes('triggers')) return 'Zap';
+  if (category.includes('cognition')) return 'Brain';
+  if (category.includes('behavior')) return 'GitBranch';
+  if (category.includes('resources')) return 'Battery';
+  if (category.includes('action')) return 'Target';
+  
+  return 'MessageCircle';
+};
+
 const Index = () => {
   const [clientId, setClientId] = useState<string>('');
   const [cards, setCards] = useState<Card[]>([]);
@@ -154,7 +191,14 @@ const Index = () => {
 
   const handleAnswer = (answer: boolean | null = null) => {
     if (showInstructionCard) {
-      handleSkipInstruction();
+      setIsExiting(true);
+      setDragOffset({ x: window.innerWidth, y: 0 });
+      setTimeout(() => {
+        handleSkipInstruction();
+        setIsExiting(false);
+        setDragOffset({ x: 0, y: 0 });
+        setCardKey(prev => prev + 1);
+      }, 300);
       return;
     }
     
@@ -168,7 +212,7 @@ const Index = () => {
     setHistory(newHistory);
     
     setIsExiting(true);
-    setDragOffset({ x: answer ? window.innerWidth : -window.innerWidth, y: 0 });
+    setDragOffset({ x: answer !== null && !isInsightCard ? (answer ? window.innerWidth : -window.innerWidth) : window.innerWidth, y: 0 });
     
     setTimeout(async () => {
       setIsExiting(false);
@@ -390,22 +434,13 @@ const Index = () => {
             onTouchMove={(e) => handleMove(e.touches[0].clientX, e.touches[0].clientY)}
             onTouchEnd={handleEnd}
           >
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 h-full flex flex-col items-center justify-center text-center border border-purple-100 dark:border-purple-900 transition-colors duration-300 relative">
-
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 h-full flex flex-col items-center justify-center text-center border border-purple-100 dark:border-purple-900 transition-colors duration-300 relative overflow-y-auto">
               
               <div className="mb-6 p-4 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-2xl">
-                <Icon name="MessageCircle" size={48} className="text-primary" />
+                <Icon name={getIconForQuestion(currentCard.question, currentCard.category)} size={48} className="text-primary" />
               </div>
 
-              <div className="mb-4 px-4 py-1 bg-purple-50 dark:bg-purple-900/30 rounded-full">
-                <span className="text-xs font-medium text-primary">{currentCard.category}</span>
-              </div>
-
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">{currentCard.question}</h2>
-
-              <div className="mt-6 text-sm text-gray-400 dark:text-gray-500">
-                Вопрос {currentIndex + 1}
-              </div>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 px-2">{currentCard.question}</h2>
             </div>
 
             {isDragging && Math.abs(dragOffset.x) > 50 && (
