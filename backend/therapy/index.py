@@ -104,7 +104,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         messages=[
             {"role": "user", "content": user_prompt}
         ],
-        temperature=0.8,
         response_format={"type": "json_schema", "json_schema": {
             "name": "cards_response",
             "strict": True,
