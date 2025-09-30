@@ -78,7 +78,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 4. После 15-20 вопросов переходи к практикам и советам
 5. Категории: "diagnostic" (диагностика), "clarification" (уточнение), "practice" (практика)
 
-Сгенерируй РОВНО 10 карточек."""
+Сгенерируй РОВНО 10 карточек в формате JSON:
+{
+  "cards": [
+    {"id": 0, "question": "текст вопроса", "category": "diagnostic"},
+    ...
+  ]
+}"""
     
     if therapy_req.history:
         history_text = "\n".join([
@@ -97,51 +103,72 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 История ответов пользователя:
 {history_text}
 
-На основе этой истории сгенерируй следующие 10 вопросов, углубляясь в проблему."""
+На основе этой истории сгенерируй следующие 10 вопросов в формате JSON:
+{{
+  "cards": [
+    {{"id": 0, "question": "текст вопроса", "category": "diagnostic"}},
+    ...
+  ]
+}}"""
     
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "user", "content": user_prompt}
-        ],
-        response_format={"type": "json_schema", "json_schema": {
-            "name": "cards_response",
-            "strict": True,
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "cards": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "id": {"type": "integer"},
-                                "question": {"type": "string"},
-                                "category": {"type": "string"}
-                            },
-                            "required": ["id", "question", "category"],
-                            "additionalProperties": False
-                        }
-                    }
-                },
-                "required": ["cards"],
-                "additionalProperties": False
-            }
-        }}
-    )
-    
-    result = json.loads(response.choices[0].message.content)
-    cards = result.get('cards', [])
-    
-    for i, card in enumerate(cards):
-        card['id'] = therapy_req.current_count + i
-    
-    return {
-        'statusCode': 200,
-        'headers': {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-        },
-        'isBase64Encoded': False,
-        'body': json.dumps({'cards': cards})
-    }
+    try:
+        response = client.responses.create(
+            model="gpt-5-nano",
+            input=user_prompt,
+            reasoning={"effort": "low"},
+            text={"format": {"type": "text"}}
+        )
+        
+        output_items = response.output
+        if not output_items:
+            raise ValueError("No output from model")
+        
+        # Find the message item (not reasoning)
+        message_item = None
+        for item in output_items:
+            if hasattr(item, 'type') and item.type == 'message':
+                message_item = item
+                break
+        
+        if not message_item:
+            raise ValueError("No message in output")
+        
+        # Extract text from message content
+        if hasattr(message_item, 'content') and message_item.content:
+            text_content = message_item.content[0]
+            output_text = text_content.text if hasattr(text_content, 'text') else str(text_content)
+        else:
+            raise ValueError("No content in message")
+        
+        result = json.loads(output_text)
+        cards = result.get('cards', [])
+        
+        for i, card in enumerate(cards):
+            card['id'] = therapy_req.current_count + i
+        
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'isBase64Encoded': False,
+            'body': json.dumps({'cards': cards})
+        }
+        
+    except Exception as e:
+        error_details = {
+            'error': str(e),
+            'error_type': type(e).__name__,
+            'response_debug': str(response.model_dump()) if 'response' in locals() else 'No response',
+            'output_debug': str(response.output) if 'response' in locals() and hasattr(response, 'output') else 'No output'
+        }
+        
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps(error_details)
+        }
