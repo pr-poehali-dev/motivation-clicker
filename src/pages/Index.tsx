@@ -34,7 +34,7 @@ const Index = () => {
   });
 
   useEffect(() => {
-    fetch('https://cdn.poehali.dev/temp/swipe.json')
+    fetch('/swipe.json')
       .then(res => res.json())
       .then(data => setSwipeAnimation(data))
       .catch(err => console.error('Failed to load animation:', err));
@@ -228,7 +228,15 @@ const Index = () => {
         </button>
       </div>
 
-
+      {currentIndex === 0 && swipeAnimation && !isLoading && hasMoreCards && (
+        <div className="relative z-10 w-32 mb-4 opacity-70">
+          <Lottie
+            animationData={swipeAnimation}
+            loop={true}
+            autoplay={true}
+          />
+        </div>
+      )}
 
       <div className="relative w-full max-w-md h-[500px] flex items-center justify-center mb-6">
         {isLoading ? (
@@ -279,16 +287,6 @@ const Index = () => {
               </div>
 
               <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">{currentCard.question}</h2>
-
-              {currentIndex === 0 && swipeAnimation && (
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-24 opacity-60">
-                  <Lottie
-                    animationData={swipeAnimation}
-                    loop={true}
-                    autoplay={true}
-                  />
-                </div>
-              )}
 
               <div className="mt-6 text-sm text-gray-400 dark:text-gray-500">
                 Вопрос {currentIndex + 1}
