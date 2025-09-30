@@ -152,6 +152,7 @@ const Index = () => {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [isExiting, setIsExiting] = useState(false);
+  const [cardKey, setCardKey] = useState(0);
 
   const currentCard = therapyCards[currentIndex];
   const hasMoreCards = currentIndex < therapyCards.length;
@@ -184,9 +185,10 @@ const Index = () => {
       }
       
       setTimeout(() => {
+        setIsExiting(false);
         setCurrentIndex((prev) => prev + 1);
         setDragOffset({ x: 0, y: 0 });
-        setIsExiting(false);
+        setCardKey((prev) => prev + 1);
       }, 300);
     } else {
       setDragOffset({ x: 0, y: 0 });
@@ -199,9 +201,10 @@ const Index = () => {
     setLiked((prev) => [...prev, currentCard.id]);
     
     setTimeout(() => {
+      setIsExiting(false);
       setCurrentIndex((prev) => prev + 1);
       setDragOffset({ x: 0, y: 0 });
-      setIsExiting(false);
+      setCardKey((prev) => prev + 1);
     }, 300);
   };
 
@@ -211,9 +214,10 @@ const Index = () => {
     setDisliked((prev) => [...prev, currentCard.id]);
     
     setTimeout(() => {
+      setIsExiting(false);
       setCurrentIndex((prev) => prev + 1);
       setDragOffset({ x: 0, y: 0 });
-      setIsExiting(false);
+      setCardKey((prev) => prev + 1);
     }, 300);
   };
 
@@ -263,10 +267,11 @@ const Index = () => {
           </div>
         ) : (
           <div
-            className="absolute w-full h-[450px] cursor-grab active:cursor-grabbing"
+            key={cardKey}
+            className="absolute w-full h-[450px] cursor-grab active:cursor-grabbing animate-fade-in"
             style={{
               transform: `translateX(${dragOffset.x}px) translateY(${dragOffset.y}px) rotate(${rotation}deg)`,
-              transition: isDragging ? 'none' : isExiting ? 'transform 0.3s ease-in' : 'transform 0.3s ease-out',
+              transition: isDragging ? 'none' : isExiting ? 'transform 0.3s ease-in, opacity 0.3s ease-in' : 'transform 0.3s ease-out',
               opacity: isExiting ? 0 : opacity,
             }}
             onMouseDown={(e) => handleStart(e.clientX, e.clientY)}
