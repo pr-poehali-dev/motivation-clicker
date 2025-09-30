@@ -1,0 +1,119 @@
+import json
+import os
+from typing import Dict, Any, List
+from openai import OpenAI
+from pydantic import BaseModel, Field
+
+class TherapyRequest(BaseModel):
+    history: List[Dict[str, Any]] = Field(default_factory=list)
+    current_count: int = Field(default=0)
+
+class Card(BaseModel):
+    id: int
+    question: str
+    category: str
+
+def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+    '''
+    Business: Генерирует терапевтические карточки с вопросами на основе истории ответов пользователя
+    Args: event с httpMethod, body (history, current_count); context с request_id
+    Returns: HTTP response с массивом карточек
+    '''
+    method: str = event.get('httpMethod', 'GET')
+    
+    if method == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Max-Age': '86400'
+            },
+            'body': ''
+        }
+    
+    if method != 'POST':
+        return {
+            'statusCode': 405,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'error': 'Method not allowed'})
+        }
+    
+    body_data = json.loads(event.get('body', '{}'))
+    therapy_req = TherapyRequest(**body_data)
+    
+    api_key = os.environ.get('OPENAI_API_KEY')
+    proxy_url = os.environ.get('HTTP_PROXY_URL')
+    
+    if not api_key:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'error': 'OpenAI API key not configured'})
+        }
+    
+    client_kwargs = {'api_key': api_key}
+    if proxy_url:
+        client_kwargs['http_client'] = None
+        import httpx
+        client_kwargs['http_client'] = httpx.Client(proxy=proxy_url)
+    
+    client = OpenAI(**client_kwargs)
+    
+    system_prompt = """Ты опытный терапевт-психолог. Твоя задача - через серию вопросов ДА/НЕТ определить источник тревоги или боли человека и помочь ему разобраться.
+
+Правила генерации вопросов:
+1. Вопросы должны быть короткими, понятными, на русском языке
+2. Только ДА/НЕТ формат (человек свайпает влево=НЕТ, вправо=ДА)
+3. Начинай с общих вопросов, постепенно углубляясь
+4. Анализируй историю ответов и задавай целевые вопросы
+5. После 15-20 вопросов переходи к практикам и советам
+6. Категории: "diagnostic" (диагностика), "clarification" (уточнение), "practice" (практика)
+
+Генерируй РОВНО 10 карточек в JSON формате:
+{"cards": [{"id": число, "question": "текст вопроса", "category": "тип"}]}"""
+    
+    user_prompt = "Сгенерируй первые 10 вопросов для начала терапевтической сессии."
+    
+    if therapy_req.history:
+        history_text = "\n".join([
+            f"Q: {item['question']} | A: {'ДА' if item['answer'] else 'НЕТ'}"
+            for item in therapy_req.history
+        ])
+        user_prompt = f"""История ответов пользователя:
+{history_text}
+
+На основе этой истории сгенерируй следующие 10 вопросов, углубляясь в проблему."""
+    
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+        temperature=0.8,
+        response_format={"type": "json_object"}
+    )
+    
+    result = json.loads(response.choices[0].message.content)
+    cards = result.get('cards', [])
+    
+    for i, card in enumerate(cards):
+        card['id'] = therapy_req.current_count + i
+    
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+        },
+        'isBase64Encoded': False,
+        'body': json.dumps({'cards': cards})
+    }
