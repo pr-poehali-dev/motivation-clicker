@@ -19,9 +19,10 @@ const SESSION_URL = 'https://functions.poehali.dev/da0083c2-29d8-4bba-9002-7a522
 const Index = () => {
   const [clientId, setClientId] = useState<string>('');
   const [cards, setCards] = useState<Card[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(-1);
   const [history, setHistory] = useState<Answer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showInstructionCard, setShowInstructionCard] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
@@ -85,7 +86,6 @@ const Index = () => {
 
   useEffect(() => {
     const initSession = async () => {
-      setIsLoading(true);
       const id = getClientId();
       setClientId(id);
       
@@ -96,7 +96,10 @@ const Index = () => {
         if (sessionData.cards && sessionData.cards.length > 0) {
           setCards(sessionData.cards);
           setHistory(sessionData.history || []);
-          setCurrentIndex(sessionData.current_index || 0);
+          if (sessionData.current_index > 0) {
+            setShowInstructionCard(false);
+            setCurrentIndex(sessionData.current_index);
+          }
         } else {
           setCards(initialCards);
         }
@@ -104,8 +107,6 @@ const Index = () => {
         console.error('Failed to load session:', error);
         setCards(initialCards);
       }
-      
-      setIsLoading(false);
     };
     initSession();
   }, []);
@@ -142,7 +143,17 @@ const Index = () => {
     }
   };
 
+  const handleSkipInstruction = () => {
+    setShowInstructionCard(false);
+    setCurrentIndex(0);
+  };
+
   const handleAnswer = (answer: boolean) => {
+    if (showInstructionCard) {
+      handleSkipInstruction();
+      return;
+    }
+    
     if (!currentCard) return;
     
     const newHistory = [...history, { question: currentCard.question, answer }];
@@ -230,10 +241,71 @@ const Index = () => {
       </div>
 
       <div className="relative w-full max-w-md h-[500px] flex items-center justify-center mb-6">
-        {isLoading ? (
-          <div className="text-center animate-pulse">
-            <Icon name="Loader2" size={48} className="text-primary mx-auto animate-spin mb-4" />
-            <p className="text-gray-600 dark:text-gray-300">Генерирую вопросы...</p>
+        {showInstructionCard ? (
+          <div
+            key="instruction-card"
+            className="absolute w-full h-[450px] cursor-grab active:cursor-grabbing animate-fade-in"
+            style={{
+              transform: `translateX(${dragOffset.x}px) translateY(${dragOffset.y}px) rotate(${rotation}deg)`,
+              transition: isDragging ? 'none' : isExiting ? 'transform 0.3s ease-in, opacity 0.3s ease-in' : 'transform 0.3s ease-out',
+              opacity: isExiting ? 0 : opacity,
+            }}
+            onMouseDown={(e) => handleStart(e.clientX, e.clientY)}
+            onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
+            onMouseUp={handleEnd}
+            onMouseLeave={handleEnd}
+            onTouchStart={(e) => handleStart(e.touches[0].clientX, e.touches[0].clientY)}
+            onTouchMove={(e) => handleMove(e.touches[0].clientX, e.touches[0].clientY)}
+            onTouchEnd={handleEnd}
+          >
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 h-full flex flex-col items-center justify-center text-center border border-purple-100 dark:border-purple-900 transition-colors duration-300 relative">
+              <div className="mb-6">
+                {swipeAnimation ? (
+                  <div className="bg-white rounded-2xl p-4">
+                    <Lottie
+                      animationData={swipeAnimation}
+                      loop={true}
+                      autoplay={true}
+                      style={{ width: 120, height: 120 }}
+                    />
+                  </div>
+                ) : (
+                  <Icon name="Hand" size={64} className="text-primary" />
+                )}
+              </div>
+
+              <div className="mb-4 px-4 py-1 bg-purple-50 dark:bg-purple-900/30 rounded-full">
+                <span className="text-xs font-medium text-primary">Инструкция</span>
+              </div>
+
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Как играть?</h2>
+              
+              <div className="space-y-3 text-gray-600 dark:text-gray-300">
+                <p className="flex items-center gap-2 justify-center">
+                  <span className="text-2xl">👉</span>
+                  <span>Свайпай вправо — Да</span>
+                </p>
+                <p className="flex items-center gap-2 justify-center">
+                  <span className="text-2xl">👈</span>
+                  <span>Свайпай влево — Нет</span>
+                </p>
+              </div>
+
+              <div className="mt-6 text-sm text-gray-400 dark:text-gray-500">
+                Свайпни, чтобы начать
+              </div>
+            </div>
+
+            {isDragging && Math.abs(dragOffset.x) > 50 && (
+              <div
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold pointer-events-none"
+                style={{
+                  color: dragOffset.x > 0 ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)',
+                }}
+              >
+                {dragOffset.x > 0 ? '✅' : '❌'}
+              </div>
+            )}
           </div>
         ) : !hasMoreCards ? (
           <div className="text-center animate-fade-in">
@@ -284,20 +356,6 @@ const Index = () => {
               </div>
             </div>
 
-            {currentIndex === 0 && swipeAnimation && animationLoopCount < 3 && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                <div className="bg-white rounded-2xl shadow-lg p-4">
-                  <Lottie
-                    animationData={swipeAnimation}
-                    loop={true}
-                    autoplay={true}
-                    style={{ width: 120, height: 120 }}
-                    onLoopComplete={() => setAnimationLoopCount(prev => prev + 1)}
-                  />
-                </div>
-              </div>
-            )}
-
             {isDragging && Math.abs(dragOffset.x) > 50 && (
               <div
                 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold pointer-events-none"
@@ -312,7 +370,7 @@ const Index = () => {
         )}
       </div>
 
-      {hasMoreCards && !isLoading && (
+      {(showInstructionCard || hasMoreCards) && !isLoading && (
         <div className="relative z-10 flex gap-6">
           <button
             onClick={() => handleAnswer(false)}
