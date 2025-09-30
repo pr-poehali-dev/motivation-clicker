@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 
 const therapyCards = [
@@ -153,6 +153,19 @@ const Index = () => {
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [isExiting, setIsExiting] = useState(false);
   const [cardKey, setCardKey] = useState(0);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   const currentCard = therapyCards[currentIndex];
   const hasMoreCards = currentIndex < therapyCards.length;
@@ -225,26 +238,15 @@ const Index = () => {
   const opacity = Math.max(0.5, 1 - Math.abs(dragOffset.x) / 300);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgxNDcsIDUxLCAyMzQsIDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40" />
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-950 dark:to-indigo-950 flex flex-col items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgxNDcsIDUxLCAyMzQsIDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40 dark:opacity-20" />
 
-      <div className="relative z-10 mb-8 text-center animate-fade-in">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">Терапевтические карточки</h1>
-        <p className="text-gray-500">Свайпай вправо, если откликается 💜</p>
-      </div>
-
-      <div className="relative z-10 flex items-center justify-center mb-8">
-        <div className="flex gap-8">
-          <div className="flex items-center gap-2 text-red-500">
-            <Icon name="X" size={24} />
-            <span className="text-2xl font-bold">{disliked.length}</span>
-          </div>
-          <div className="flex items-center gap-2 text-green-500">
-            <Icon name="Heart" size={24} />
-            <span className="text-2xl font-bold">{liked.length}</span>
-          </div>
-        </div>
-      </div>
+      <button
+        onClick={() => setIsDarkMode(!isDarkMode)}
+        className="absolute top-6 right-6 z-20 p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:scale-110 transition-transform"
+      >
+        <Icon name={isDarkMode ? 'Sun' : 'Moon'} size={24} className="text-gray-700 dark:text-gray-200" />
+      </button>
 
       <div className="relative w-full max-w-md h-[500px] flex items-center justify-center mb-6">
         {!hasMoreCards ? (
@@ -252,8 +254,8 @@ const Index = () => {
             <div className="mb-4">
               <Icon name="CheckCircle" size={64} className="text-green-500 mx-auto" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Все карточки просмотрены! 🎉</h2>
-            <p className="text-gray-600 mb-4">Ты изучил {liked.length} техник, которые тебе откликнулись</p>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Все карточки просмотрены! 🎉</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">Ты изучил {liked.length} техник, которые тебе откликнулись</p>
             <button
               onClick={() => {
                 setCurrentIndex(0);
@@ -282,20 +284,20 @@ const Index = () => {
             onTouchMove={(e) => handleMove(e.touches[0].clientX, e.touches[0].clientY)}
             onTouchEnd={handleEnd}
           >
-            <div className="bg-white rounded-3xl shadow-2xl p-8 h-full flex flex-col items-center justify-center text-center border border-purple-100">
-              <div className="mb-6 p-4 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 h-full flex flex-col items-center justify-center text-center border border-purple-100 dark:border-purple-900 transition-colors duration-300">
+              <div className="mb-6 p-4 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-2xl">
                 <Icon name={currentCard.icon} size={48} className="text-primary" />
               </div>
 
-              <div className="mb-2 px-4 py-1 bg-purple-50 rounded-full">
+              <div className="mb-2 px-4 py-1 bg-purple-50 dark:bg-purple-900/30 rounded-full">
                 <span className="text-xs font-medium text-primary">{currentCard.category}</span>
               </div>
 
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">{currentCard.title}</h2>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">{currentCard.title}</h2>
 
-              <p className="text-gray-600 text-lg leading-relaxed">{currentCard.description}</p>
+              <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">{currentCard.description}</p>
 
-              <div className="mt-6 text-sm text-gray-400">
+              <div className="mt-6 text-sm text-gray-400 dark:text-gray-500">
                 {currentIndex + 1} / {therapyCards.length}
               </div>
             </div>
@@ -318,29 +320,20 @@ const Index = () => {
         <div className="relative z-10 flex gap-6">
           <button
             onClick={handleDislike}
-            className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-red-500 hover:scale-110 transition-transform"
+            className="w-16 h-16 rounded-full bg-white dark:bg-gray-800 shadow-lg flex items-center justify-center text-red-500 hover:scale-110 transition-all border border-gray-200 dark:border-gray-700"
           >
             <Icon name="X" size={32} />
           </button>
           <button
             onClick={handleLike}
-            className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-green-500 hover:scale-110 transition-transform"
+            className="w-16 h-16 rounded-full bg-white dark:bg-gray-800 shadow-lg flex items-center justify-center text-green-500 hover:scale-110 transition-all border border-gray-200 dark:border-gray-700"
           >
             <Icon name="Heart" size={32} />
           </button>
         </div>
       )}
 
-      <div className="relative z-10 mt-6 flex gap-4 text-gray-400 text-sm">
-        <div className="flex items-center gap-2">
-          <Icon name="ArrowLeft" size={16} />
-          <span>Пропустить</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span>Откликается</span>
-          <Icon name="ArrowRight" size={16} />
-        </div>
-      </div>
+
     </div>
   );
 };
