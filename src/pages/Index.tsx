@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
+import Lottie from 'lottie-react';
 
 interface Card {
   id: number;
@@ -26,10 +27,18 @@ const Index = () => {
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [isExiting, setIsExiting] = useState(false);
   const [cardKey, setCardKey] = useState(0);
+  const [swipeAnimation, setSwipeAnimation] = useState<any>(null);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : false;
   });
+
+  useEffect(() => {
+    fetch('https://cdn.poehali.dev/temp/swipe.json')
+      .then(res => res.json())
+      .then(data => setSwipeAnimation(data))
+      .catch(err => console.error('Failed to load animation:', err));
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
@@ -259,22 +268,7 @@ const Index = () => {
             onTouchEnd={handleEnd}
           >
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 h-full flex flex-col items-center justify-center text-center border border-purple-100 dark:border-purple-900 transition-colors duration-300 relative">
-              {currentIndex === 0 && (
-                <>
-                  <div className="absolute -left-8 top-1/2 -translate-y-1/2 animate-bounce-horizontal">
-                    <div className="flex items-center gap-2 text-red-500">
-                      <Icon name="ChevronLeft" size={32} />
-                      <span className="text-sm font-medium">НЕТ</span>
-                    </div>
-                  </div>
-                  <div className="absolute -right-8 top-1/2 -translate-y-1/2 animate-bounce-horizontal-reverse">
-                    <div className="flex items-center gap-2 text-green-500">
-                      <span className="text-sm font-medium">ДА</span>
-                      <Icon name="ChevronRight" size={32} />
-                    </div>
-                  </div>
-                </>
-              )}
+
               
               <div className="mb-6 p-4 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-2xl">
                 <Icon name="MessageCircle" size={48} className="text-primary" />
@@ -286,8 +280,14 @@ const Index = () => {
 
               <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">{currentCard.question}</h2>
 
-              {currentIndex === 0 && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Свайпай карточку влево или вправо</p>
+              {currentIndex === 0 && swipeAnimation && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-24 opacity-60">
+                  <Lottie
+                    animationData={swipeAnimation}
+                    loop={true}
+                    autoplay={true}
+                  />
+                </div>
               )}
 
               <div className="mt-6 text-sm text-gray-400 dark:text-gray-500">
