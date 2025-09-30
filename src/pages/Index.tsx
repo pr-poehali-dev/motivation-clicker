@@ -6,6 +6,8 @@ interface Card {
   id: number;
   question: string;
   category: string;
+  type?: 'question' | 'insight';
+  insight?: string;
 }
 
 interface Answer {
@@ -150,7 +152,7 @@ const Index = () => {
     setCurrentIndex(0);
   };
 
-  const handleAnswer = (answer: boolean) => {
+  const handleAnswer = (answer: boolean | null = null) => {
     if (showInstructionCard) {
       handleSkipInstruction();
       return;
@@ -158,7 +160,10 @@ const Index = () => {
     
     if (!currentCard) return;
     
-    const newHistory = [...history, { question: currentCard.question, answer }];
+    const isInsightCard = currentCard.type === 'insight';
+    const newHistory = isInsightCard 
+      ? history 
+      : [...history, { question: currentCard.question, answer: answer as boolean }];
     const newIndex = currentIndex + 1;
     setHistory(newHistory);
     
@@ -287,21 +292,31 @@ const Index = () => {
                 <span className="text-xs font-medium text-primary">Инструкция</span>
               </div>
 
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Как играть?</h2>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Добро пожаловать!</h2>
               
-              <div className="space-y-3 text-gray-600 dark:text-gray-300">
-                <p className="flex items-center gap-2 justify-center">
-                  <span className="text-2xl">👉</span>
-                  <span>Свайпай вправо — Да</span>
+              <div className="space-y-4 text-gray-600 dark:text-gray-300 text-sm px-2">
+                <p className="leading-relaxed">
+                  Это мини-сессия с психологом через карточки. Я помогу разобраться в причинах твоего состояния и найти пути решения.
                 </p>
-                <p className="flex items-center gap-2 justify-center">
-                  <span className="text-2xl">👈</span>
-                  <span>Свайпай влево — Нет</span>
+                
+                <p className="leading-relaxed font-semibold text-purple-700 dark:text-purple-400">
+                  Результат: ты получишь осознание своих паттернов и конкретный план действий.
                 </p>
+                
+                <div className="space-y-2 pt-2">
+                  <p className="flex items-center gap-2 justify-center">
+                    <span className="text-2xl">👉</span>
+                    <span>Свайп вправо — Да</span>
+                  </p>
+                  <p className="flex items-center gap-2 justify-center">
+                    <span className="text-2xl">👈</span>
+                    <span>Свайп влево — Нет</span>
+                  </p>
+                </div>
               </div>
 
-              <div className="mt-6 text-sm text-gray-400 dark:text-gray-500">
-                Свайпни, чтобы начать
+              <div className="mt-4 text-sm text-gray-400 dark:text-gray-500">
+                Свайпни, чтобы начать сессию
               </div>
             </div>
 
@@ -329,6 +344,34 @@ const Index = () => {
             >
               Начать новую сессию
             </button>
+          </div>
+        ) : currentCard.type === 'insight' ? (
+          <div
+            key={cardKey}
+            className="absolute w-full h-[450px] animate-fade-in"
+          >
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-3xl shadow-2xl p-8 h-full flex flex-col items-center justify-center text-center border-2 border-purple-200 dark:border-purple-800 transition-colors duration-300 relative overflow-y-auto">
+              <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl">
+                <Icon name="Lightbulb" size={48} className="text-amber-500" />
+              </div>
+
+              <div className="mb-4 px-4 py-1 bg-amber-100 dark:bg-amber-900/30 rounded-full">
+                <span className="text-xs font-medium text-amber-700 dark:text-amber-400">{currentCard.category}</span>
+              </div>
+
+              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Промежуточная сводка</h2>
+
+              <p className="text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap max-w-sm">
+                {currentCard.insight || currentCard.question}
+              </p>
+
+              <button
+                onClick={() => handleAnswer(null)}
+                className="mt-6 px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg"
+              >
+                Понятно, дальше
+              </button>
+            </div>
           </div>
         ) : (
           <div
