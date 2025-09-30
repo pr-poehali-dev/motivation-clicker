@@ -411,30 +411,52 @@ const Index = () => {
         ) : currentCard.type === 'insight' ? (
           <div
             key={cardKey}
-            className="absolute w-full h-[560px] animate-fade-in"
+            className="absolute w-full h-[560px] cursor-grab active:cursor-grabbing animate-fade-in"
+            style={{
+              transform: `translateX(${dragOffset.x}px) rotate(${rotation}deg)`,
+              transition: isDragging ? 'none' : isExiting ? 'transform 0.3s ease-in, opacity 0.3s ease-in' : 'transform 0.3s ease-out',
+              opacity: isExiting ? 0 : opacity,
+            }}
+            onMouseDown={(e) => handleStart(e.clientX, e.clientY)}
+            onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
+            onMouseUp={handleEnd}
+            onMouseLeave={handleEnd}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              handleStart(e.touches[0].clientX, e.touches[0].clientY);
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              handleMove(e.touches[0].clientX, e.touches[0].clientY);
+            }}
+            onTouchEnd={handleEnd}
           >
-            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-3xl shadow-2xl p-8 h-full flex flex-col items-center justify-center text-center border-2 border-purple-200 dark:border-purple-800 transition-colors duration-300 relative overflow-y-auto">
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-3xl shadow-2xl p-6 h-full flex flex-col items-center justify-center text-center border-2 border-purple-200 dark:border-purple-800 transition-colors duration-300 relative">
               <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl">
                 <Icon name="Lightbulb" size={48} className="text-amber-500" />
               </div>
 
-              <div className="mb-4 px-4 py-1 bg-amber-100 dark:bg-amber-900/30 rounded-full">
-                <span className="text-xs font-medium text-amber-700 dark:text-amber-400">{currentCard.category}</span>
-              </div>
+              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">Промежуточная сводка</h2>
 
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Промежуточная сводка</h2>
-
-              <p className="text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap max-w-sm">
+              <p className="text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap text-sm px-4">
                 {currentCard.insight || currentCard.question}
               </p>
 
-              <button
-                onClick={() => handleAnswer(null)}
-                className="mt-6 px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg"
-              >
-                Понятно, дальше
-              </button>
+              <div className="mt-6 text-xs text-gray-400 dark:text-gray-500">
+                Свайпни вправо если полезно, влево если нет
+              </div>
             </div>
+
+            {isDragging && Math.abs(dragOffset.x) > 50 && (
+              <div
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold pointer-events-none"
+                style={{
+                  color: dragOffset.x > 0 ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)',
+                }}
+              >
+                {dragOffset.x > 0 ? '👍' : '👎'}
+              </div>
+            )}
           </div>
         ) : (
           <div
