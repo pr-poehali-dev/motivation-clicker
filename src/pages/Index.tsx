@@ -112,10 +112,12 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (currentIndex > 0 && currentIndex % 5 === 0 && cards.length - currentIndex <= 5) {
+    if (currentIndex >= 0 && cards.length - currentIndex <= 3) {
       const prefetchCards = async () => {
         const newCards = await fetchCards(history, cards.length);
-        setCards(prev => [...prev, ...newCards]);
+        if (newCards.length > 0) {
+          setCards(prev => [...prev, ...newCards]);
+        }
       };
       prefetchCards();
     }
@@ -168,6 +170,13 @@ const Index = () => {
       setCurrentIndex(newIndex);
       setDragOffset({ x: 0, y: 0 });
       setCardKey(prev => prev + 1);
+      
+      if (cards.length - newIndex <= 3) {
+        const newCards = await fetchCards(newHistory, cards.length);
+        if (newCards.length > 0) {
+          setCards(prev => [...prev, ...newCards]);
+        }
+      }
       
       await saveSession(newHistory, newIndex, cards);
     }, 300);
@@ -369,23 +378,6 @@ const Index = () => {
           </div>
         )}
       </div>
-
-      {(showInstructionCard || hasMoreCards) && !isLoading && (
-        <div className="relative z-10 flex gap-6">
-          <button
-            onClick={() => handleAnswer(false)}
-            className="w-16 h-16 rounded-full bg-white dark:bg-gray-800 shadow-lg flex items-center justify-center text-red-500 hover:scale-110 transition-all border border-gray-200 dark:border-gray-700"
-          >
-            <Icon name="X" size={32} />
-          </button>
-          <button
-            onClick={() => handleAnswer(true)}
-            className="w-16 h-16 rounded-full bg-white dark:bg-gray-800 shadow-lg flex items-center justify-center text-green-500 hover:scale-110 transition-all border border-gray-200 dark:border-gray-700"
-          >
-            <Icon name="Check" size={32} />
-          </button>
-        </div>
-      )}
     </div>
   );
 };
