@@ -1,6 +1,4 @@
-import { useState, useRef } from 'react';
-import { useSprings, animated, to as interpolate } from '@react-spring/web';
-import { useDrag } from '@use-gesture/react';
+import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 
 const therapyCards = [
@@ -146,63 +144,60 @@ const therapyCards = [
   },
 ];
 
-const to = (i: number) => ({
-  x: 0,
-  y: i * -4,
-  scale: 1,
-  rot: -10 + Math.random() * 20,
-  delay: i * 100,
-});
-
-const from = (_i: number) => ({ x: 0, rot: 0, scale: 1.5, y: -1000 });
-
-const trans = (r: number, s: number) =>
-  `perspective(1500px) rotateX(30deg) rotateY(${r / 10}deg) rotateZ(${r}deg) scale(${s})`;
-
 const Index = () => {
-  const [gone] = useState(() => new Set());
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [liked, setLiked] = useState<number[]>([]);
   const [disliked, setDisliked] = useState<number[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
 
-  const [props, api] = useSprings(therapyCards.length, (i) => ({
-    ...to(i),
-    from: from(i),
-  }));
+  const currentCard = therapyCards[currentIndex];
+  const hasMoreCards = currentIndex < therapyCards.length;
 
-  const bind = useDrag(
-    ({ args: [index], active, movement: [mx], direction: [xDir], velocity: [vx] }) => {
-      const trigger = vx > 0.2;
-      if (!active && trigger) {
-        gone.add(index);
-        const cardId = therapyCards[index].id;
-        if (mx > 0) {
-          setLiked((prev) => [...prev, cardId]);
-        } else {
-          setDisliked((prev) => [...prev, cardId]);
-        }
+  const handleStart = (clientX: number, clientY: number) => {
+    setIsDragging(true);
+    setStartPos({ x: clientX, y: clientY });
+  };
+
+  const handleMove = (clientX: number, clientY: number) => {
+    if (!isDragging) return;
+    const deltaX = clientX - startPos.x;
+    const deltaY = clientY - startPos.y;
+    setDragOffset({ x: deltaX, y: deltaY });
+  };
+
+  const handleEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    if (Math.abs(dragOffset.x) > 100) {
+      if (dragOffset.x > 0) {
+        setLiked((prev) => [...prev, currentCard.id]);
+      } else {
+        setDisliked((prev) => [...prev, currentCard.id]);
       }
-      api.start((i) => {
-        if (index !== i) return;
-        const isGone = gone.has(index);
-        const x = isGone ? (200 + window.innerWidth) * xDir : active ? mx : 0;
-        const rot = mx / 100 + (isGone ? xDir * 10 * vx : 0);
-        const scale = active ? 1.1 : 1;
-        return {
-          x,
-          rot,
-          scale,
-          delay: undefined,
-          config: { friction: 50, tension: active ? 800 : isGone ? 200 : 500 },
-        };
-      });
-      if (!active && gone.size === therapyCards.length) {
-        setTimeout(() => {
-          gone.clear();
-          api.start((i) => to(i));
-        }, 600);
-      }
+      setTimeout(() => {
+        setCurrentIndex((prev) => prev + 1);
+        setDragOffset({ x: 0, y: 0 });
+      }, 200);
+    } else {
+      setDragOffset({ x: 0, y: 0 });
     }
-  );
+  };
+
+  const handleLike = () => {
+    setLiked((prev) => [...prev, currentCard.id]);
+    setCurrentIndex((prev) => prev + 1);
+  };
+
+  const handleDislike = () => {
+    setDisliked((prev) => [...prev, currentCard.id]);
+    setCurrentIndex((prev) => prev + 1);
+  };
+
+  const rotation = isDragging ? dragOffset.x / 20 : 0;
+  const opacity = Math.max(0.5, 1 - Math.abs(dragOffset.x) / 300);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -226,48 +221,91 @@ const Index = () => {
         </div>
       </div>
 
-      <div className="relative w-full max-w-md h-[500px] flex items-center justify-center">
-        {props.map(({ x, y, rot, scale }, i) => (
-          <animated.div
-            key={therapyCards[i].id}
-            style={{
-              transform: interpolate([x, y], (x, y) => `translate3d(${x}px,${y}px,0)`),
-              position: 'absolute',
-              width: '100%',
-              height: '450px',
-              willChange: 'transform',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              touchAction: 'none',
-            }}
-          >
-            <animated.div
-              {...bind(i)}
-              style={{
-                transform: interpolate([rot, scale], trans),
-                width: '100%',
-                height: '100%',
+      <div className="relative w-full max-w-md h-[500px] flex items-center justify-center mb-6">
+        {!hasMoreCards ? (
+          <div className="text-center animate-fade-in">
+            <div className="mb-4">
+              <Icon name="CheckCircle" size={64} className="text-green-500 mx-auto" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Все карточки просмотрены! 🎉</h2>
+            <p className="text-gray-600 mb-4">Ты изучил {liked.length} техник, которые тебе откликнулись</p>
+            <button
+              onClick={() => {
+                setCurrentIndex(0);
+                setLiked([]);
+                setDisliked([]);
               }}
-              className="bg-white rounded-3xl shadow-2xl p-8 flex flex-col items-center justify-center text-center border border-purple-100 cursor-grab active:cursor-grabbing"
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all"
             >
+              Начать заново
+            </button>
+          </div>
+        ) : (
+          <div
+            className="absolute w-full h-[450px] cursor-grab active:cursor-grabbing"
+            style={{
+              transform: `translateX(${dragOffset.x}px) translateY(${dragOffset.y}px) rotate(${rotation}deg)`,
+              transition: isDragging ? 'none' : 'transform 0.3s ease-out',
+              opacity,
+            }}
+            onMouseDown={(e) => handleStart(e.clientX, e.clientY)}
+            onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
+            onMouseUp={handleEnd}
+            onMouseLeave={handleEnd}
+            onTouchStart={(e) => handleStart(e.touches[0].clientX, e.touches[0].clientY)}
+            onTouchMove={(e) => handleMove(e.touches[0].clientX, e.touches[0].clientY)}
+            onTouchEnd={handleEnd}
+          >
+            <div className="bg-white rounded-3xl shadow-2xl p-8 h-full flex flex-col items-center justify-center text-center border border-purple-100">
               <div className="mb-6 p-4 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl">
-                <Icon name={therapyCards[i].icon} size={48} className="text-primary" />
+                <Icon name={currentCard.icon} size={48} className="text-primary" />
               </div>
 
               <div className="mb-2 px-4 py-1 bg-purple-50 rounded-full">
-                <span className="text-xs font-medium text-primary">{therapyCards[i].category}</span>
+                <span className="text-xs font-medium text-primary">{currentCard.category}</span>
               </div>
 
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">{therapyCards[i].title}</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">{currentCard.title}</h2>
 
-              <p className="text-gray-600 text-lg leading-relaxed">{therapyCards[i].description}</p>
-            </animated.div>
-          </animated.div>
-        ))}
+              <p className="text-gray-600 text-lg leading-relaxed">{currentCard.description}</p>
+
+              <div className="mt-6 text-sm text-gray-400">
+                {currentIndex + 1} / {therapyCards.length}
+              </div>
+            </div>
+
+            {isDragging && Math.abs(dragOffset.x) > 50 && (
+              <div
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold pointer-events-none"
+                style={{
+                  color: dragOffset.x > 0 ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)',
+                }}
+              >
+                {dragOffset.x > 0 ? '💚' : '❌'}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="relative z-10 mt-8 flex gap-4 text-gray-400 text-sm">
+      {hasMoreCards && (
+        <div className="relative z-10 flex gap-6">
+          <button
+            onClick={handleDislike}
+            className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-red-500 hover:scale-110 transition-transform"
+          >
+            <Icon name="X" size={32} />
+          </button>
+          <button
+            onClick={handleLike}
+            className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-green-500 hover:scale-110 transition-transform"
+          >
+            <Icon name="Heart" size={32} />
+          </button>
+        </div>
+      )}
+
+      <div className="relative z-10 mt-6 flex gap-4 text-gray-400 text-sm">
         <div className="flex items-center gap-2">
           <Icon name="ArrowLeft" size={16} />
           <span>Пропустить</span>
