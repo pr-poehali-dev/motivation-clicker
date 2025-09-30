@@ -1,0 +1,31 @@
+{
+  "tests": [
+    {
+      "name": "Get session for new client",
+      "method": "GET",
+      "path": "/?client_id=test123",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "client_id": "test123",
+        "history": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Save session",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "client_id": "test456",
+        "history": [{"question": "Test?", "answer": true}],
+        "current_index": 1,
+        "cards": [{"id": 0, "question": "Test?", "category": "test"}]
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
