@@ -64,49 +64,75 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     client_kwargs = {'api_key': api_key}
     if proxy_url:
-        client_kwargs['http_client'] = None
         import httpx
         client_kwargs['http_client'] = httpx.Client(proxy=proxy_url)
     
     client = OpenAI(**client_kwargs)
     
-    system_prompt = """Ты опытный терапевт-психолог. Твоя задача - через серию вопросов ДА/НЕТ определить источник тревоги или боли человека и помочь ему разобраться.
+    user_prompt = """Ты опытный терапевт-психолог. Твоя задача - через серию вопросов ДА/НЕТ определить источник тревоги или боли человека и помочь ему разобраться.
 
 Правила генерации вопросов:
 1. Вопросы должны быть короткими, понятными, на русском языке
 2. Только ДА/НЕТ формат (человек свайпает влево=НЕТ, вправо=ДА)
-3. Начинай с общих вопросов, постепенно углубляясь
-4. Анализируй историю ответов и задавай целевые вопросы
-5. После 15-20 вопросов переходи к практикам и советам
-6. Категории: "diagnostic" (диагностика), "clarification" (уточнение), "practice" (практика)
+3. Анализируй историю ответов и задавай целевые вопросы
+4. После 15-20 вопросов переходи к практикам и советам
+5. Категории: "diagnostic" (диагностика), "clarification" (уточнение), "practice" (практика)
 
-Генерируй РОВНО 10 карточек в JSON формате:
-{"cards": [{"id": число, "question": "текст вопроса", "category": "тип"}]}"""
-    
-    user_prompt = "Сгенерируй первые 10 вопросов для начала терапевтической сессии."
+Сгенерируй РОВНО 10 карточек."""
     
     if therapy_req.history:
         history_text = "\n".join([
             f"Q: {item['question']} | A: {'ДА' if item['answer'] else 'НЕТ'}"
             for item in therapy_req.history
         ])
-        user_prompt = f"""История ответов пользователя:
+        user_prompt = f"""Ты опытный терапевт-психолог. Твоя задача - через серию вопросов ДА/НЕТ определить источник тревоги или боли человека и помочь ему разобраться.
+
+Правила генерации вопросов:
+1. Вопросы должны быть короткими, понятными, на русском языке
+2. Только ДА/НЕТ формат (человек свайпает влево=НЕТ, вправо=ДА)
+3. Анализируй историю ответов и задавай целевые вопросы
+4. После 15-20 вопросов переходи к практикам и советам
+5. Категории: "diagnostic" (диагностика), "clarification" (уточнение), "practice" (практика)
+
+История ответов пользователя:
 {history_text}
 
 На основе этой истории сгенерируй следующие 10 вопросов, углубляясь в проблему."""
     
-    response = client.beta.chat.completions.parse(
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
         temperature=0.8,
-        response_format=CardsResponse
+        response_format={"type": "json_schema", "json_schema": {
+            "name": "cards_response",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "cards": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "integer"},
+                                "question": {"type": "string"},
+                                "category": {"type": "string"}
+                            },
+                            "required": ["id", "question", "category"],
+                            "additionalProperties": False
+                        }
+                    }
+                },
+                "required": ["cards"],
+                "additionalProperties": False
+            }
+        }}
     )
     
-    parsed_response = response.choices[0].message.parsed
-    cards = [card.model_dump() for card in parsed_response.cards]
+    result = json.loads(response.choices[0].message.content)
+    cards = result.get('cards', [])
     
     for i, card in enumerate(cards):
         card['id'] = therapy_req.current_count + i

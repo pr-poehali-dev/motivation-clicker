@@ -65,6 +65,14 @@ const Index = () => {
     }
   };
 
+  const initialCards: Card[] = [
+    { id: 0, question: "Ты чувствуешь тревогу прямо сейчас?", category: "diagnostic" },
+    { id: 1, question: "Это чувство мешает тебе в повседневной жизни?", category: "diagnostic" },
+    { id: 2, question: "Ты хочешь что-то изменить в своей жизни?", category: "diagnostic" },
+    { id: 3, question: "Есть ли у тебя поддержка со стороны близких?", category: "diagnostic" },
+    { id: 4, question: "Ты готов работать над собой?", category: "diagnostic" }
+  ];
+
   useEffect(() => {
     const initSession = async () => {
       setIsLoading(true);
@@ -80,12 +88,10 @@ const Index = () => {
           setHistory(sessionData.history || []);
           setCurrentIndex(sessionData.current_index || 0);
         } else {
-          const initialCards = await fetchCards([], 0);
           setCards(initialCards);
         }
       } catch (error) {
         console.error('Failed to load session:', error);
-        const initialCards = await fetchCards([], 0);
         setCards(initialCards);
       }
       
@@ -213,10 +219,7 @@ const Index = () => {
         </button>
       </div>
 
-      <div className="relative z-10 mb-8 text-center">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Терапевтическая сессия</h1>
-        <p className="text-gray-500 dark:text-gray-400">Свайпай вправо для ДА, влево для НЕТ</p>
-      </div>
+
 
       <div className="relative w-full max-w-md h-[500px] flex items-center justify-center mb-6">
         {isLoading ? (
@@ -255,7 +258,24 @@ const Index = () => {
             onTouchMove={(e) => handleMove(e.touches[0].clientX, e.touches[0].clientY)}
             onTouchEnd={handleEnd}
           >
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 h-full flex flex-col items-center justify-center text-center border border-purple-100 dark:border-purple-900 transition-colors duration-300">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 h-full flex flex-col items-center justify-center text-center border border-purple-100 dark:border-purple-900 transition-colors duration-300 relative">
+              {currentIndex === 0 && (
+                <>
+                  <div className="absolute -left-8 top-1/2 -translate-y-1/2 animate-bounce-horizontal">
+                    <div className="flex items-center gap-2 text-red-500">
+                      <Icon name="ChevronLeft" size={32} />
+                      <span className="text-sm font-medium">НЕТ</span>
+                    </div>
+                  </div>
+                  <div className="absolute -right-8 top-1/2 -translate-y-1/2 animate-bounce-horizontal-reverse">
+                    <div className="flex items-center gap-2 text-green-500">
+                      <span className="text-sm font-medium">ДА</span>
+                      <Icon name="ChevronRight" size={32} />
+                    </div>
+                  </div>
+                </>
+              )}
+              
               <div className="mb-6 p-4 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-2xl">
                 <Icon name="MessageCircle" size={48} className="text-primary" />
               </div>
@@ -265,6 +285,10 @@ const Index = () => {
               </div>
 
               <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">{currentCard.question}</h2>
+
+              {currentIndex === 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Свайпай карточку влево или вправо</p>
+              )}
 
               <div className="mt-6 text-sm text-gray-400 dark:text-gray-500">
                 Вопрос {currentIndex + 1}

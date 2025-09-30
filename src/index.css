@@ -102,3 +102,31 @@
     font-family: "Inter", sans-serif;
   }
 }
+
+@keyframes bounce-horizontal {
+  0%,
+  100% {
+    transform: translateX(0) translateY(-50%);
+  }
+  50% {
+    transform: translateX(-10px) translateY(-50%);
+  }
+}
+
+@keyframes bounce-horizontal-reverse {
+  0%,
+  100% {
+    transform: translateX(0) translateY(-50%);
+  }
+  50% {
+    transform: translateX(10px) translateY(-50%);
+  }
+}
+
+.animate-bounce-horizontal {
+  animation: bounce-horizontal 1.5s ease-in-out infinite;
+}
+
+.animate-bounce-horizontal-reverse {
+  animation: bounce-horizontal-reverse 1.5s ease-in-out infinite;
+}
