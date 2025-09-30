@@ -90,6 +90,20 @@ const Index = () => {
     }
   }, [isDarkMode]);
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    };
+  }, []);
+
   const getClientId = (): string => {
     if (typeof window !== 'undefined' && (window as any).yaCounter101026698) {
       return (window as any).yaCounter101026698.getClientID() || 'anonymous';
@@ -239,8 +253,7 @@ const Index = () => {
   const handleMove = (clientX: number, clientY: number) => {
     if (!isDragging) return;
     const deltaX = clientX - startPos.x;
-    const deltaY = clientY - startPos.y;
-    setDragOffset({ x: deltaX, y: deltaY });
+    setDragOffset({ x: deltaX, y: 0 });
   };
 
   const handleEnd = () => {
@@ -304,7 +317,7 @@ const Index = () => {
             key="instruction-card"
             className="absolute w-full h-[560px] cursor-grab active:cursor-grabbing animate-fade-in"
             style={{
-              transform: `translateX(${dragOffset.x}px) translateY(${dragOffset.y}px) rotate(${rotation}deg)`,
+              transform: `translateX(${dragOffset.x}px) rotate(${rotation}deg)`,
               transition: isDragging ? 'none' : isExiting ? 'transform 0.3s ease-in, opacity 0.3s ease-in' : 'transform 0.3s ease-out',
               opacity: isExiting ? 0 : opacity,
             }}
@@ -312,8 +325,14 @@ const Index = () => {
             onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
             onMouseUp={handleEnd}
             onMouseLeave={handleEnd}
-            onTouchStart={(e) => handleStart(e.touches[0].clientX, e.touches[0].clientY)}
-            onTouchMove={(e) => handleMove(e.touches[0].clientX, e.touches[0].clientY)}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              handleStart(e.touches[0].clientX, e.touches[0].clientY);
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              handleMove(e.touches[0].clientX, e.touches[0].clientY);
+            }}
             onTouchEnd={handleEnd}
           >
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 h-full flex flex-col items-center justify-center text-center border border-purple-100 dark:border-purple-900 transition-colors duration-300 relative overflow-y-auto">
@@ -422,7 +441,7 @@ const Index = () => {
             key={cardKey}
             className="absolute w-full h-[560px] cursor-grab active:cursor-grabbing animate-fade-in"
             style={{
-              transform: `translateX(${dragOffset.x}px) translateY(${dragOffset.y}px) rotate(${rotation}deg)`,
+              transform: `translateX(${dragOffset.x}px) rotate(${rotation}deg)`,
               transition: isDragging ? 'none' : isExiting ? 'transform 0.3s ease-in, opacity 0.3s ease-in' : 'transform 0.3s ease-out',
               opacity: isExiting ? 0 : opacity,
             }}
@@ -430,8 +449,14 @@ const Index = () => {
             onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
             onMouseUp={handleEnd}
             onMouseLeave={handleEnd}
-            onTouchStart={(e) => handleStart(e.touches[0].clientX, e.touches[0].clientY)}
-            onTouchMove={(e) => handleMove(e.touches[0].clientX, e.touches[0].clientY)}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              handleStart(e.touches[0].clientX, e.touches[0].clientY);
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              handleMove(e.touches[0].clientX, e.touches[0].clientY);
+            }}
             onTouchEnd={handleEnd}
           >
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 h-full flex flex-col items-center justify-center text-center border border-purple-100 dark:border-purple-900 transition-colors duration-300 relative overflow-y-auto">
