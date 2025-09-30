@@ -254,11 +254,11 @@ const Index = () => {
         </button>
       </div>
 
-      <div className="relative w-full max-w-md h-[500px] flex items-center justify-center mb-6">
+      <div className="relative w-full max-w-sm h-[600px] flex items-center justify-center mb-6">
         {showInstructionCard ? (
           <div
             key="instruction-card"
-            className="absolute w-full h-[450px] cursor-grab active:cursor-grabbing animate-fade-in"
+            className="absolute w-full h-[560px] cursor-grab active:cursor-grabbing animate-fade-in"
             style={{
               transform: `translateX(${dragOffset.x}px) translateY(${dragOffset.y}px) rotate(${rotation}deg)`,
               transition: isDragging ? 'none' : isExiting ? 'transform 0.3s ease-in, opacity 0.3s ease-in' : 'transform 0.3s ease-out',
@@ -348,7 +348,7 @@ const Index = () => {
         ) : currentCard.type === 'insight' ? (
           <div
             key={cardKey}
-            className="absolute w-full h-[450px] animate-fade-in"
+            className="absolute w-full h-[560px] animate-fade-in"
           >
             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-3xl shadow-2xl p-8 h-full flex flex-col items-center justify-center text-center border-2 border-purple-200 dark:border-purple-800 transition-colors duration-300 relative overflow-y-auto">
               <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl">
@@ -376,7 +376,7 @@ const Index = () => {
         ) : (
           <div
             key={cardKey}
-            className="absolute w-full h-[450px] cursor-grab active:cursor-grabbing animate-fade-in"
+            className="absolute w-full h-[560px] cursor-grab active:cursor-grabbing animate-fade-in"
             style={{
               transform: `translateX(${dragOffset.x}px) translateY(${dragOffset.y}px) rotate(${rotation}deg)`,
               transition: isDragging ? 'none' : isExiting ? 'transform 0.3s ease-in, opacity 0.3s ease-in' : 'transform 0.3s ease-out',
