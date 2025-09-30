@@ -173,33 +173,24 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         user_prompt += f"\n\nИСТОРИЯ ОТВЕТОВ ПОЛЬЗОВАТЕЛЯ:\n{history_text}\n\nАдаптируй вопросы под эти ответы, ищи глубину и закономерности."
     
     try:
-        response = client.responses.create(
-            model="gpt-5-nano",
-            input=user_prompt,
-            reasoning={"effort": "low"},
-            text={"format": {"type": "text"}}
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "Ты опытный психотерапевт. Отвечай только валидным JSON без markdown форматирования."},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7
         )
         
-        output_items = response.output
-        if not output_items:
+        output_text = response.choices[0].message.content
+        if not output_text:
             raise ValueError("No output from model")
         
-        # Find the message item (not reasoning)
-        message_item = None
-        for item in output_items:
-            if hasattr(item, 'type') and item.type == 'message':
-                message_item = item
-                break
-        
-        if not message_item:
-            raise ValueError("No message in output")
-        
-        # Extract text from message content
-        if hasattr(message_item, 'content') and message_item.content:
-            text_content = message_item.content[0]
-            output_text = text_content.text if hasattr(text_content, 'text') else str(text_content)
-        else:
-            raise ValueError("No content in message")
+        # Remove markdown code blocks if present
+        output_text = output_text.strip()
+        if output_text.startswith('```'):
+            lines = output_text.split('\n')
+            output_text = '\n'.join(lines[1:-1]) if len(lines) > 2 else output_text
         
         result = json.loads(output_text)
         cards = result.get('cards', [])
