@@ -100,7 +100,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 На основе этой истории сгенерируй следующие 10 вопросов, углубляясь в проблему."""
     
     response = client.chat.completions.create(
-        model="gpt-5-mini-2025-08-07",
+        model="gpt-4o-mini",
         messages=[
             {"role": "user", "content": user_prompt}
         ],
