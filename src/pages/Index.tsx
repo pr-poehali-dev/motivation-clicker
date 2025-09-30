@@ -151,6 +151,7 @@ const Index = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [isExiting, setIsExiting] = useState(false);
 
   const currentCard = therapyCards[currentIndex];
   const hasMoreCards = currentIndex < therapyCards.length;
@@ -172,28 +173,48 @@ const Index = () => {
     setIsDragging(false);
 
     if (Math.abs(dragOffset.x) > 100) {
+      setIsExiting(true);
+      const direction = dragOffset.x > 0 ? 1 : -1;
+      setDragOffset({ x: direction * window.innerWidth, y: dragOffset.y });
+      
       if (dragOffset.x > 0) {
         setLiked((prev) => [...prev, currentCard.id]);
       } else {
         setDisliked((prev) => [...prev, currentCard.id]);
       }
+      
       setTimeout(() => {
         setCurrentIndex((prev) => prev + 1);
         setDragOffset({ x: 0, y: 0 });
-      }, 200);
+        setIsExiting(false);
+      }, 300);
     } else {
       setDragOffset({ x: 0, y: 0 });
     }
   };
 
   const handleLike = () => {
+    setIsExiting(true);
+    setDragOffset({ x: window.innerWidth, y: 0 });
     setLiked((prev) => [...prev, currentCard.id]);
-    setCurrentIndex((prev) => prev + 1);
+    
+    setTimeout(() => {
+      setCurrentIndex((prev) => prev + 1);
+      setDragOffset({ x: 0, y: 0 });
+      setIsExiting(false);
+    }, 300);
   };
 
   const handleDislike = () => {
+    setIsExiting(true);
+    setDragOffset({ x: -window.innerWidth, y: 0 });
     setDisliked((prev) => [...prev, currentCard.id]);
-    setCurrentIndex((prev) => prev + 1);
+    
+    setTimeout(() => {
+      setCurrentIndex((prev) => prev + 1);
+      setDragOffset({ x: 0, y: 0 });
+      setIsExiting(false);
+    }, 300);
   };
 
   const rotation = isDragging ? dragOffset.x / 20 : 0;
@@ -245,8 +266,8 @@ const Index = () => {
             className="absolute w-full h-[450px] cursor-grab active:cursor-grabbing"
             style={{
               transform: `translateX(${dragOffset.x}px) translateY(${dragOffset.y}px) rotate(${rotation}deg)`,
-              transition: isDragging ? 'none' : 'transform 0.3s ease-out',
-              opacity,
+              transition: isDragging ? 'none' : isExiting ? 'transform 0.3s ease-in' : 'transform 0.3s ease-out',
+              opacity: isExiting ? 0 : opacity,
             }}
             onMouseDown={(e) => handleStart(e.clientX, e.clientY)}
             onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
