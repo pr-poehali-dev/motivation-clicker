@@ -1,0 +1,35 @@
+{
+  "tests": [
+    {
+      "name": "Initial cards generation",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "history": [],
+        "current_count": 0
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "cards": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Cards generation with history",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "history": [
+          {"question": "Ты чувствуешь тревогу прямо сейчас?", "answer": true},
+          {"question": "Тревога связана с работой?", "answer": false}
+        ],
+        "current_count": 10
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "cards": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

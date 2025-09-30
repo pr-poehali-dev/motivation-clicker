@@ -13,6 +13,9 @@ class Card(BaseModel):
     question: str
     category: str
 
+class CardsResponse(BaseModel):
+    cards: List[Card]
+
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
     Business: Генерирует терапевтические карточки с вопросами на основе истории ответов пользователя
@@ -92,18 +95,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
 На основе этой истории сгенерируй следующие 10 вопросов, углубляясь в проблему."""
     
-    response = client.chat.completions.create(
+    response = client.beta.chat.completions.parse(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
         temperature=0.8,
-        response_format={"type": "json_object"}
+        response_format=CardsResponse
     )
     
-    result = json.loads(response.choices[0].message.content)
-    cards = result.get('cards', [])
+    parsed_response = response.choices[0].message.parsed
+    cards = [card.model_dump() for card in parsed_response.cards]
     
     for i, card in enumerate(cards):
         card['id'] = therapy_req.current_count + i
