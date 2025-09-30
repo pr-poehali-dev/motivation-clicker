@@ -85,21 +85,30 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             body_data = json.loads(event.get('body', '{}'))
             session = SessionData(**body_data)
             
-            cursor.execute("""
-                INSERT INTO therapy_sessions (client_id, history, current_index, cards, updated_at)
-                VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
-                ON CONFLICT (client_id) 
-                DO UPDATE SET 
-                    history = EXCLUDED.history,
-                    current_index = EXCLUDED.current_index,
-                    cards = EXCLUDED.cards,
-                    updated_at = CURRENT_TIMESTAMP
-            """, (
-                session.client_id,
-                json.dumps(session.history),
-                session.current_index,
-                json.dumps(session.cards)
-            ))
+            cursor.execute("SELECT client_id FROM therapy_sessions WHERE client_id = %s", (session.client_id,))
+            exists = cursor.fetchone()
+            
+            if exists:
+                cursor.execute("""
+                    UPDATE therapy_sessions 
+                    SET history = %s, current_index = %s, cards = %s, updated_at = CURRENT_TIMESTAMP
+                    WHERE client_id = %s
+                """, (
+                    json.dumps(session.history),
+                    session.current_index,
+                    json.dumps(session.cards),
+                    session.client_id
+                ))
+            else:
+                cursor.execute("""
+                    INSERT INTO therapy_sessions (client_id, history, current_index, cards)
+                    VALUES (%s, %s, %s, %s)
+                """, (
+                    session.client_id,
+                    json.dumps(session.history),
+                    session.current_index,
+                    json.dumps(session.cards)
+                ))
             conn.commit()
             
             return {

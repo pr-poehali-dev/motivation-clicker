@@ -12,9 +12,11 @@ interface Answer {
   answer: boolean;
 }
 
-const BACKEND_URL = 'https://functions.poehali.dev/aa8579aa-b123-4fcd-aa83-0c89accb40dc';
+const THERAPY_URL = 'https://functions.poehali.dev/aa8579aa-b123-4fcd-aa83-0c89accb40dc';
+const SESSION_URL = 'https://functions.poehali.dev/da0083c2-29d8-4bba-9002-7a5225186e44';
 
 const Index = () => {
+  const [clientId, setClientId] = useState<string>('');
   const [cards, setCards] = useState<Card[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [history, setHistory] = useState<Answer[]>([]);
@@ -38,9 +40,16 @@ const Index = () => {
     }
   }, [isDarkMode]);
 
+  const getClientId = (): string => {
+    if (typeof window !== 'undefined' && (window as any).yaCounter101026698) {
+      return (window as any).yaCounter101026698.getClientID() || 'anonymous';
+    }
+    return 'anonymous';
+  };
+
   const fetchCards = async (currentHistory: Answer[], currentCount: number) => {
     try {
-      const response = await fetch(BACKEND_URL, {
+      const response = await fetch(THERAPY_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -57,13 +66,32 @@ const Index = () => {
   };
 
   useEffect(() => {
-    const loadInitialCards = async () => {
+    const initSession = async () => {
       setIsLoading(true);
-      const initialCards = await fetchCards([], 0);
-      setCards(initialCards);
+      const id = getClientId();
+      setClientId(id);
+      
+      try {
+        const response = await fetch(`${SESSION_URL}?client_id=${id}`);
+        const sessionData = await response.json();
+        
+        if (sessionData.cards && sessionData.cards.length > 0) {
+          setCards(sessionData.cards);
+          setHistory(sessionData.history || []);
+          setCurrentIndex(sessionData.current_index || 0);
+        } else {
+          const initialCards = await fetchCards([], 0);
+          setCards(initialCards);
+        }
+      } catch (error) {
+        console.error('Failed to load session:', error);
+        const initialCards = await fetchCards([], 0);
+        setCards(initialCards);
+      }
+      
       setIsLoading(false);
     };
-    loadInitialCards();
+    initSession();
   }, []);
 
   useEffect(() => {
@@ -79,20 +107,42 @@ const Index = () => {
   const currentCard = cards[currentIndex];
   const hasMoreCards = currentIndex < cards.length;
 
+  const saveSession = async (newHistory: Answer[], newIndex: number, currentCards: Card[]) => {
+    if (!clientId) return;
+    
+    try {
+      await fetch(SESSION_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: clientId,
+          history: newHistory,
+          current_index: newIndex,
+          cards: currentCards
+        })
+      });
+    } catch (error) {
+      console.error('Failed to save session:', error);
+    }
+  };
+
   const handleAnswer = (answer: boolean) => {
     if (!currentCard) return;
     
     const newHistory = [...history, { question: currentCard.question, answer }];
+    const newIndex = currentIndex + 1;
     setHistory(newHistory);
     
     setIsExiting(true);
     setDragOffset({ x: answer ? window.innerWidth : -window.innerWidth, y: 0 });
     
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsExiting(false);
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex(newIndex);
       setDragOffset({ x: 0, y: 0 });
       setCardKey(prev => prev + 1);
+      
+      await saveSession(newHistory, newIndex, cards);
     }, 300);
   };
 
@@ -123,11 +173,23 @@ const Index = () => {
   const opacity = Math.max(0.5, 1 - Math.abs(dragOffset.x) / 300);
 
   const handleRestart = async () => {
+    if (!clientId) return;
+    
     setIsLoading(true);
+    
+    try {
+      await fetch(`${SESSION_URL}?client_id=${clientId}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+    }
+    
     setCurrentIndex(0);
     setHistory([]);
     const initialCards = await fetchCards([], 0);
     setCards(initialCards);
+    await saveSession([], 0, initialCards);
     setIsLoading(false);
   };
 
@@ -135,12 +197,21 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-950 dark:to-indigo-950 flex flex-col items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgxNDcsIDUxLCAyMzQsIDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40 dark:opacity-20" />
 
-      <button
-        onClick={() => setIsDarkMode(!isDarkMode)}
-        className="absolute top-6 right-6 z-20 p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:scale-110 transition-transform"
-      >
-        <Icon name={isDarkMode ? 'Sun' : 'Moon'} size={24} className="text-gray-700 dark:text-gray-200" />
-      </button>
+      <div className="absolute top-6 right-6 z-20 flex gap-2">
+        <button
+          onClick={handleRestart}
+          className="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:scale-110 transition-transform"
+          title="Начать заново"
+        >
+          <Icon name="RotateCcw" size={24} className="text-gray-700 dark:text-gray-200" />
+        </button>
+        <button
+          onClick={() => setIsDarkMode(!isDarkMode)}
+          className="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:scale-110 transition-transform"
+        >
+          <Icon name={isDarkMode ? 'Sun' : 'Moon'} size={24} className="text-gray-700 dark:text-gray-200" />
+        </button>
+      </div>
 
       <div className="relative z-10 mb-8 text-center">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Терапевтическая сессия</h1>
