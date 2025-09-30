@@ -272,29 +272,29 @@ const Index = () => {
             onTouchMove={(e) => handleMove(e.touches[0].clientX, e.touches[0].clientY)}
             onTouchEnd={handleEnd}
           >
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 h-full flex flex-col items-center justify-center text-center border border-purple-100 dark:border-purple-900 transition-colors duration-300 relative">
-              <div className="mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 h-full flex flex-col items-center justify-center text-center border border-purple-100 dark:border-purple-900 transition-colors duration-300 relative overflow-y-auto">
+              <div className="mb-4">
                 {swipeAnimation ? (
-                  <div className="bg-white rounded-2xl p-4">
+                  <div className="bg-white rounded-2xl p-2">
                     <Lottie
                       animationData={swipeAnimation}
                       loop={true}
                       autoplay={true}
-                      style={{ width: 120, height: 120 }}
+                      style={{ width: 80, height: 80 }}
                     />
                   </div>
                 ) : (
-                  <Icon name="Hand" size={64} className="text-primary" />
+                  <Icon name="Hand" size={48} className="text-primary" />
                 )}
               </div>
 
-              <div className="mb-4 px-4 py-1 bg-purple-50 dark:bg-purple-900/30 rounded-full">
+              <div className="mb-3 px-4 py-1 bg-purple-50 dark:bg-purple-900/30 rounded-full">
                 <span className="text-xs font-medium text-primary">Инструкция</span>
               </div>
 
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Добро пожаловать!</h2>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-3">Добро пожаловать!</h2>
               
-              <div className="space-y-4 text-gray-600 dark:text-gray-300 text-sm px-2">
+              <div className="space-y-3 text-gray-600 dark:text-gray-300 text-sm px-2">
                 <p className="leading-relaxed">
                   Это мини-сессия с психологом через карточки. Я помогу разобраться в причинах твоего состояния и найти пути решения.
                 </p>
@@ -305,17 +305,17 @@ const Index = () => {
                 
                 <div className="space-y-2 pt-2">
                   <p className="flex items-center gap-2 justify-center">
-                    <span className="text-2xl">👉</span>
+                    <span className="text-xl">👉</span>
                     <span>Свайп вправо — Да</span>
                   </p>
                   <p className="flex items-center gap-2 justify-center">
-                    <span className="text-2xl">👈</span>
+                    <span className="text-xl">👈</span>
                     <span>Свайп влево — Нет</span>
                   </p>
                 </div>
               </div>
 
-              <div className="mt-4 text-sm text-gray-400 dark:text-gray-500">
+              <div className="mt-3 text-sm text-gray-400 dark:text-gray-500">
                 Свайпни, чтобы начать сессию
               </div>
             </div>
