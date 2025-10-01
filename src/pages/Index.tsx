@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
-import Lottie from 'lottie-react';
+import TherapyCard from '@/components/therapy/TherapyCard';
+import InsightCard from '@/components/therapy/InsightCard';
+import InstructionCard from '@/components/therapy/InstructionCard';
+import CompletionCard from '@/components/therapy/CompletionCard';
+import { getIconForQuestion } from '@/utils/iconMapper';
 
 interface Card {
   id: number;
@@ -18,43 +22,6 @@ interface Answer {
 const THERAPY_URL = 'https://functions.poehali.dev/aa8579aa-b123-4fcd-aa83-0c89accb40dc';
 const SESSION_URL = 'https://functions.poehali.dev/da0083c2-29d8-4bba-9002-7a5225186e44';
 
-const getIconForQuestion = (question: string, category: string): string => {
-  const lowerQ = question.toLowerCase();
-  
-  if (lowerQ.includes('тревог') || lowerQ.includes('беспоко')) return 'AlertCircle';
-  if (lowerQ.includes('груст') || lowerQ.includes('печал')) return 'CloudRain';
-  if (lowerQ.includes('злос') || lowerQ.includes('раздра')) return 'Flame';
-  if (lowerQ.includes('стыд') || lowerQ.includes('вин')) return 'EyeOff';
-  if (lowerQ.includes('страх') || lowerQ.includes('боишь')) return 'Ghost';
-  if (lowerQ.includes('люд') || lowerQ.includes('друз')) return 'Users';
-  if (lowerQ.includes('партнёр') || lowerQ.includes('отношен')) return 'Heart';
-  if (lowerQ.includes('родител') || lowerQ.includes('семь')) return 'Home';
-  if (lowerQ.includes('коллег') || lowerQ.includes('работ')) return 'Briefcase';
-  if (lowerQ.includes('утр')) return 'Sunrise';
-  if (lowerQ.includes('вечер') || lowerQ.includes('ноч')) return 'Moon';
-  if (lowerQ.includes('сон') || lowerQ.includes('уста')) return 'BedDouble';
-  if (lowerQ.includes('голод') || lowerQ.includes('ед')) return 'UtensilsCrossed';
-  if (lowerQ.includes('мысл') || lowerQ.includes('дума')) return 'Brain';
-  if (lowerQ.includes('избега')) return 'ArrowBigLeft';
-  if (lowerQ.includes('помога')) return 'HandHeart';
-  if (lowerQ.includes('поддержк')) return 'Users';
-  if (lowerQ.includes('хобби')) return 'Palette';
-  if (lowerQ.includes('спорт')) return 'Dumbbell';
-  if (lowerQ.includes('медитац') || lowerQ.includes('дыхан')) return 'Wind';
-  if (lowerQ.includes('готов') || lowerQ.includes('попроб')) return 'Rocket';
-  if (lowerQ.includes('план')) return 'ListChecks';
-  if (lowerQ.includes('изменен')) return 'RefreshCw';
-  
-  if (category.includes('screening')) return 'Search';
-  if (category.includes('triggers')) return 'Zap';
-  if (category.includes('cognition')) return 'Brain';
-  if (category.includes('behavior')) return 'GitBranch';
-  if (category.includes('resources')) return 'Battery';
-  if (category.includes('action')) return 'Target';
-  
-  return 'MessageCircle';
-};
-
 const Index = () => {
   const [clientId, setClientId] = useState<string>('');
   const [cards, setCards] = useState<Card[]>([]);
@@ -68,7 +35,6 @@ const Index = () => {
   const [isExiting, setIsExiting] = useState(false);
   const [cardKey, setCardKey] = useState(0);
   const [swipeAnimation, setSwipeAnimation] = useState<any>(null);
-  const [animationLoopCount, setAnimationLoopCount] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : false;
@@ -313,194 +279,49 @@ const Index = () => {
 
       <div className="relative w-full max-w-sm h-[600px] flex items-center justify-center mb-6">
         {showInstructionCard ? (
-          <div
-            key="instruction-card"
-            className="absolute w-full h-[560px] cursor-grab active:cursor-grabbing animate-fade-in"
-            style={{
-              transform: `translateX(${dragOffset.x}px) rotate(${rotation}deg)`,
-              transition: isDragging ? 'none' : isExiting ? 'transform 0.3s ease-in, opacity 0.3s ease-in' : 'transform 0.3s ease-out',
-              opacity: isExiting ? 0 : opacity,
-            }}
-            onMouseDown={(e) => handleStart(e.clientX, e.clientY)}
-            onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
-            onMouseUp={handleEnd}
-            onMouseLeave={handleEnd}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              handleStart(e.touches[0].clientX, e.touches[0].clientY);
-            }}
-            onTouchMove={(e) => {
-              e.preventDefault();
-              handleMove(e.touches[0].clientX, e.touches[0].clientY);
-            }}
-            onTouchEnd={handleEnd}
-          >
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 h-full flex flex-col items-center justify-center text-center border border-purple-100 dark:border-purple-900 transition-colors duration-300 relative overflow-y-auto">
-              <div className="mb-4">
-                {swipeAnimation ? (
-                  <div className="bg-white rounded-2xl p-2">
-                    <Lottie
-                      animationData={swipeAnimation}
-                      loop={true}
-                      autoplay={true}
-                      style={{ width: 80, height: 80 }}
-                    />
-                  </div>
-                ) : (
-                  <Icon name="Hand" size={48} className="text-primary" />
-                )}
-              </div>
-
-              <div className="mb-3 px-4 py-1 bg-purple-50 dark:bg-purple-900/30 rounded-full">
-                <span className="text-xs font-medium text-primary">Инструкция</span>
-              </div>
-
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-3">Добро пожаловать!</h2>
-              
-              <div className="space-y-3 text-gray-600 dark:text-gray-300 text-sm px-2">
-                <p className="leading-relaxed">
-                  Это мини-сессия с психологом через карточки. Я помогу разобраться в причинах твоего состояния и найти пути решения.
-                </p>
-                
-                <p className="leading-relaxed font-semibold text-purple-700 dark:text-purple-400">
-                  Результат: ты получишь осознание своих паттернов и конкретный план действий.
-                </p>
-                
-                <div className="space-y-2 pt-2">
-                  <p className="flex items-center gap-2 justify-center">
-                    <span className="text-xl">👉</span>
-                    <span>Свайп вправо — Да</span>
-                  </p>
-                  <p className="flex items-center gap-2 justify-center">
-                    <span className="text-xl">👈</span>
-                    <span>Свайп влево — Нет</span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-3 text-sm text-gray-400 dark:text-gray-500">
-                Свайпни, чтобы начать сессию
-              </div>
-            </div>
-
-            {isDragging && Math.abs(dragOffset.x) > 50 && (
-              <div
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold pointer-events-none"
-                style={{
-                  color: dragOffset.x > 0 ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)',
-                }}
-              >
-                {dragOffset.x > 0 ? '✅' : '❌'}
-              </div>
-            )}
-          </div>
+          <InstructionCard
+            isDragging={isDragging}
+            isExiting={isExiting}
+            dragOffset={dragOffset}
+            rotation={rotation}
+            opacity={opacity}
+            swipeAnimation={swipeAnimation}
+            onStart={handleStart}
+            onMove={handleMove}
+            onEnd={handleEnd}
+          />
         ) : !hasMoreCards ? (
-          <div className="text-center animate-fade-in">
-            <div className="mb-4">
-              <Icon name="CheckCircle" size={64} className="text-green-500 mx-auto" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Сессия завершена! 🎉</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">Ты ответил на {history.length} вопросов</p>
-            <button
-              onClick={handleRestart}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all"
-            >
-              Начать новую сессию
-            </button>
-          </div>
+          <CompletionCard 
+            historyLength={history.length}
+            onRestart={handleRestart}
+          />
         ) : currentCard.type === 'insight' ? (
-          <div
-            key={cardKey}
-            className="absolute w-full h-[560px] cursor-grab active:cursor-grabbing animate-fade-in"
-            style={{
-              transform: `translateX(${dragOffset.x}px) rotate(${rotation}deg)`,
-              transition: isDragging ? 'none' : isExiting ? 'transform 0.3s ease-in, opacity 0.3s ease-in' : 'transform 0.3s ease-out',
-              opacity: isExiting ? 0 : opacity,
-            }}
-            onMouseDown={(e) => handleStart(e.clientX, e.clientY)}
-            onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
-            onMouseUp={handleEnd}
-            onMouseLeave={handleEnd}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              handleStart(e.touches[0].clientX, e.touches[0].clientY);
-            }}
-            onTouchMove={(e) => {
-              e.preventDefault();
-              handleMove(e.touches[0].clientX, e.touches[0].clientY);
-            }}
-            onTouchEnd={handleEnd}
-          >
-            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-3xl shadow-2xl p-6 h-full flex flex-col items-center justify-center text-center border-2 border-purple-200 dark:border-purple-800 transition-colors duration-300 relative">
-              <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl">
-                <Icon name="Lightbulb" size={48} className="text-amber-500" />
-              </div>
-
-              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">Промежуточная сводка</h2>
-
-              <p className="text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap text-sm px-4">
-                {currentCard.insight || currentCard.question}
-              </p>
-
-              <div className="mt-6 text-xs text-gray-400 dark:text-gray-500">
-                Свайпни вправо если полезно, влево если нет
-              </div>
-            </div>
-
-            {isDragging && Math.abs(dragOffset.x) > 50 && (
-              <div
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold pointer-events-none"
-                style={{
-                  color: dragOffset.x > 0 ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)',
-                }}
-              >
-                {dragOffset.x > 0 ? '👍' : '👎'}
-              </div>
-            )}
-          </div>
+          <InsightCard
+            card={currentCard}
+            cardKey={cardKey}
+            isDragging={isDragging}
+            isExiting={isExiting}
+            dragOffset={dragOffset}
+            rotation={rotation}
+            opacity={opacity}
+            onStart={handleStart}
+            onMove={handleMove}
+            onEnd={handleEnd}
+          />
         ) : (
-          <div
-            key={cardKey}
-            className="absolute w-full h-[560px] cursor-grab active:cursor-grabbing animate-fade-in"
-            style={{
-              transform: `translateX(${dragOffset.x}px) rotate(${rotation}deg)`,
-              transition: isDragging ? 'none' : isExiting ? 'transform 0.3s ease-in, opacity 0.3s ease-in' : 'transform 0.3s ease-out',
-              opacity: isExiting ? 0 : opacity,
-            }}
-            onMouseDown={(e) => handleStart(e.clientX, e.clientY)}
-            onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
-            onMouseUp={handleEnd}
-            onMouseLeave={handleEnd}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              handleStart(e.touches[0].clientX, e.touches[0].clientY);
-            }}
-            onTouchMove={(e) => {
-              e.preventDefault();
-              handleMove(e.touches[0].clientX, e.touches[0].clientY);
-            }}
-            onTouchEnd={handleEnd}
-          >
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 h-full flex flex-col items-center justify-center text-center border border-purple-100 dark:border-purple-900 transition-colors duration-300 relative overflow-y-auto">
-              
-              <div className="mb-6 p-4 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-2xl">
-                <Icon name={getIconForQuestion(currentCard.question, currentCard.category)} size={48} className="text-primary" />
-              </div>
-
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 px-2">{currentCard.question}</h2>
-            </div>
-
-            {isDragging && Math.abs(dragOffset.x) > 50 && (
-              <div
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold pointer-events-none"
-                style={{
-                  color: dragOffset.x > 0 ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)',
-                }}
-              >
-                {dragOffset.x > 0 ? '✅' : '❌'}
-              </div>
-            )}
-          </div>
+          <TherapyCard
+            card={currentCard}
+            cardKey={cardKey}
+            isDragging={isDragging}
+            isExiting={isExiting}
+            dragOffset={dragOffset}
+            rotation={rotation}
+            opacity={opacity}
+            onStart={handleStart}
+            onMove={handleMove}
+            onEnd={handleEnd}
+            getIconForQuestion={getIconForQuestion}
+          />
         )}
       </div>
     </div>
